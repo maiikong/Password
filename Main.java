@@ -13,17 +13,43 @@ public class Main {
             return;
         }
 
-        int passwordLength = Integer.parseInt(args[0]);
-        int languageCount = Integer.parseInt(args[1]);
-        boolean hasUpperCase = Boolean.parseBoolean(args[2]);
-        boolean hasSpecialCharacters = Boolean.parseBoolean(args[3]);
-        String requiredDigits = args[4];
+        int passwordLength;
+        int languageCount;
+        boolean hasUpperCase;
+        boolean hasSpecialCharacters;
+        String requiredDigits;
+        try {
+            passwordLength = Integer.parseInt(args[0]);
+            languageCount = Integer.parseInt(args[1]);
+            hasUpperCase = parseBooleanArgument(args[2]);
+            hasSpecialCharacters = parseBooleanArgument(args[3]);
+            requiredDigits = args[4];
+        } catch (NumberFormatException e) {
+            System.out.println("Неверные значения: используйте цифры вместо букв");
+            return;
+        }
 
+        long startTime = System.currentTimeMillis();
         StringBuilder password = generatePassword(passwordLength, languageCount, hasUpperCase, hasSpecialCharacters, requiredDigits);
+        long endTime = System.currentTimeMillis();
+
         if (passwordLength > 0) {
             System.out.println("Сгенерированный пароль: " + password);
+            System.out.println("Время генерации пароля: " + (endTime - startTime) + " мс");
         } else {
-            System.out.println("Некорректные значения длинны");
+            System.out.println("Некорректные значения длины");
+        }
+    }
+
+    private static boolean parseBooleanArgument(String arg) {
+        if (arg.equalsIgnoreCase("true")) {
+            return true;
+        } else if (arg.equalsIgnoreCase("false")) {
+            return false;
+        } else {
+            System.out.println("Неверное значение. Используйте только 'true' или 'false'.");
+            System.exit(1);
+            return false;
         }
     }
 
@@ -33,19 +59,13 @@ public class Main {
             return new StringBuilder();
         }
 
-        StringBuilder password = new StringBuilder();
         List<String> characterPool = createCharacterPool(languageCount, hasSpecialCharacters, requiredDigits);
         if (characterPool.isEmpty()) {
             System.out.println("Не выбраны никакие типы символов");
             return new StringBuilder();
         }
 
-        addRandomCharacters(characterPool, password, length);
-        if (hasUpperCase) {
-            convertToUpperCase(password);
-        }
-
-        return password;
+        return addCharactersAndConvertToUpperCase(characterPool, length, hasUpperCase);
     }
 
     private static List<String> createCharacterPool(int languageCount, boolean hasSpecialCharacters, String requiredDigits) {
@@ -59,22 +79,27 @@ public class Main {
         if (hasSpecialCharacters) {
             characterPool.add(SPECIAL_CHARACTERS);
         }
-        for (int i = 0; i < requiredDigits.length(); i++) {
-            characterPool.add(String.valueOf(requiredDigits.charAt(i)));
+        for (char digit : requiredDigits.toCharArray()) {
+            characterPool.add(String.valueOf(digit));
         }
         return characterPool;
     }
 
-    private static void addRandomCharacters(List<String> characterPool, StringBuilder password, int length) {
+    private static StringBuilder addCharactersAndConvertToUpperCase(List<String> characterPool, int length, boolean hasUpperCase) {
+        StringBuilder password = new StringBuilder();
         Random rand = new Random();
         for (int i = 0; i < length; i++) {
             String randomCharacterSet = characterPool.get(rand.nextInt(characterPool.size()));
             char randomChar = getRandomCharacterFromString(randomCharacterSet, rand);
             password.append(randomChar);
         }
+        if (hasUpperCase) {
+            randomizeUpperCase(password);
+        }
+        return password;
     }
 
-    private static void convertToUpperCase(StringBuilder password) {
+    private static void randomizeUpperCase(StringBuilder password) {
         Random rand = new Random();
         for (int i = 0; i < password.length(); i++) {
             if (rand.nextBoolean()) {
